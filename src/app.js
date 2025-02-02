@@ -14,4 +14,11 @@ app.use(express.urlencoded({extended : "true"}));
 app.use(express.static("public"));
 app.use(cookieParser());
 
+//setting routes 
+import ItineraryRoutes from "./routes/Itinerary.routes.js";
+
+app.use("/api/itinerary" , ItineraryRoutes);
+//https://localhost:8001/api/itinerary/getItinerary
+
+
 export {app};
