@@ -30,3 +30,41 @@ const getHotels = async (location) => {
 
 // Example usage
 getHotels(placeName);
+
+/*
+const getHotels = asyncHandler(async(req , res , next)=>{
+    const {location} = req.body;
+    const textSearchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=hotels+in+${location}&key=${MapsApiKey}`;
+    const textSearchResponse = await axios.get(textSearchUrl);
+    const hotels = textSearchResponse.data.results.slice(0, 15); // Get top 15 hotels
+
+    let hotelDetails = [];
+
+    for (let hotel of hotels) {
+        const placeId = hotel.place_id;
+
+        // Step 2: Fetch Hotel Details (Address, Rating, Website, etc.)
+        const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,rating,formatted_address,photos,url,geometry&key=${MapsApiKey}`;
+        const detailsResponse = await axios.get(detailsUrl);
+        const details = detailsResponse.data.result;
+
+        // Step 3: Fetch Hotel Images (If Available)
+        let hotelImages = [];
+        if (details.photos) {
+            hotelImages = details.photos.slice(0, 2).map(photo => 
+                `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photo.photo_reference}&key=${MapsApiKey}`
+            );
+        }
+
+        // Step 4: Add Hotel Data to Response
+        hotelDetails.push({
+            name: details.name,
+            rating: details.rating || "No rating available",
+            address: details.formatted_address,
+            google_map_link: details.url,
+            location: details.geometry.location, // { lat, lng }
+            images: hotelImages
+        });
+    }
+});
+*/

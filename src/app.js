@@ -16,9 +16,11 @@ app.use(cookieParser());
 
 //setting routes 
 import ItineraryRoutes from "./routes/Itinerary.routes.js";
+import UserRoutes from "./routes/User.routes.js"
 
 app.use("/api/itinerary" , ItineraryRoutes);
-//https://localhost:8001/api/itinerary/getItinerary
+//https://localhost:8001/api/itinerary/
 
-
+app.use("/api/user" , UserRoutes);
+//https://localhost:8001/api/user/
 export {app};
