@@ -1,60 +1,18 @@
+// models/Package.js
 import mongoose from "mongoose";
 
 const PackageSchema = new mongoose.Schema({
-    userId: { 
-        type: mongoose.Schema.Types.ObjectId, 
-        ref: "User", 
-        required: true 
-    }, // User who created the package
-    name: { 
-        type: String, 
-        required: true 
-    },
-    location: { 
-        type: String, 
-        required: true 
-    },
-    duration: { 
-        type: Number, 
-        required: true 
-    },
-    members : {
-        type : Number,
-        required : true
-    },
-    date : {
-        type : String,
-        required : true
-    },
-    price: { 
-        type: Number, 
-        required: true 
-    },
-    description: { 
-        type: String 
-    },
-    inclusions: [
-        { 
-            type: String 
-        }
-    ], // What's included
-    images: [
-        { 
-            type: String 
-        }
-    ], // URLs to images
-    rating: { 
-        type: Number, 
-        default: 0 
-    },
-    reviews: [
-        { 
-            type: mongoose.Schema.Types.ObjectId, 
-            ref: "Review" 
-        }
-    ],
-    createdAt: { type: Date, default: Date.now },
-});
+  title: { type: String, required: true },
+  date: { type :String, required : true },
+  description: String,
+  destination: String,
+  price: Number,
+  postedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  availableSlots: { type: Number, default: 1 },
+  // Users who have requested to join (pending approval)
+  requests: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  // Users who have been accepted into the package
+  enrolled: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }]
+}, { timestamps: true });
 
-export const Package = mongoose.model("Package" , PackageSchema)
-  
+export default mongoose.model("Package", PackageSchema);

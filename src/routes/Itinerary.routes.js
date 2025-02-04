@@ -1,9 +1,13 @@
 import { Router } from "express";
-import { getHotels, getItinerary } from "../controllers/Itinerary.controllers.js";
+import { addItinerary, AIchat, getHotels, getItinerary } from "../controllers/Itinerary.controllers.js";
+import { verifyJWT } from "../middleware/auth.middlewares.js";
 
 const router = Router();
 
-router.route("/getItinerary").post(getItinerary);
-router.route("/getHotels").post(getHotels);
+//check them all after making user routes and controllers
+router.route("/getItinerary").post(verifyJWT , getItinerary);
+router.route("/getHotels").post(verifyJWT, getHotels);
+router.route("/addItinerary").post(verifyJWT , addItinerary);
+router.route("/AIchat").post(verifyJWT , AIchat);
 
 export default router;

@@ -1,12 +1,16 @@
 import {GoogleGenerativeAI} from "@google/generative-ai";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import axios from "axios";
+import { Itinerary } from "../models/Itinerary.models.js";
+import { ApiError } from "../utils/ApiError.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
+import { User } from "../models/User.models.js";
 
 const genAI = new GoogleGenerativeAI("AIzaSyAnu_TXvnTH5WN04vZ9b8nq4eclNyjUQuA");
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 const MapsApiKey = process.env.GOOGLE_MAPS_API;
 
-const getItinerary =  asyncHandler(async(req , res , next)=>{
+const getItinerary =  asyncHandler(async(req , res , next)=>{ //checked
     const {location , days , budget , travelers , preferences} = req.body;
 
     const prompt = `
@@ -49,11 +53,16 @@ const getItinerary =  asyncHandler(async(req , res , next)=>{
     const result = await model.generateContent(prompt);
     const ItineraryResponse = await result.response.text(); // Extract text from response object
 
+    if(!ItineraryResponse){
+        throw new ApiError(400 , "error in genrating your Itinerary ! ");
+    }
     
-    res.json({ itinerary: ItineraryResponse });
+    return res
+    .status(200)
+    .json(new ApiResponse( 200 , ItineraryResponse ));
 });
 
-const getHotels = asyncHandler(async(req , res , next)=>{
+const getHotels = asyncHandler(async(req , res , next)=>{ //checked
     const {location} = req.body;
     const textSearchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=hotels+in+${location}&key=${MapsApiKey}`;
     const textSearchResponse = await axios.get(textSearchUrl);
@@ -87,10 +96,63 @@ const getHotels = asyncHandler(async(req , res , next)=>{
             images: hotelImages
         });
     }
-    res.json({hotels : hotelDetails});
+    return res
+    .status(200)
+    .json(new ApiResponse(201 , hotelDetails));
 });
 
-export {getItinerary , getHotels};
+const addItinerary = asyncHandler(async(req,res)=>{//unchecked
+    const {content , location} = req.body;
+    if(!content || !location){
+        throw new ApiError(400 , "give content and loacation both! ");
+    }
+
+    const newItinerary = await Itinerary.create({
+        userId : req.user?._id,
+        location : location,
+        plan : content
+    });
+
+    const createdItinerary = await Itinerary.findById(newItinerary._id);
+
+    if(!createdItinerary){
+        throw new ApiError(400 , "something went wrong in uploading itinerary! ");
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $addToSet : {
+                Itineraries : createdItinerary._id
+            }
+        },
+        {new : true}
+    )
+
+    if(!updatedUser){
+        throw new ApiError(400 , "Error in Updating Itinerary in User DB! ");
+    }
+
+    return res
+    .status(200)
+    .json(new ApiResponse(201 , createdItinerary ,"Itinerary added successfully !"));
+});
+
+const AIchat = asyncHandler(async(req, res)=>{//unchecked
+    const {prompt} = req.body;
+    const result = await model.genrate(prompt);
+    const finalResult = await result.response.text();
+
+    if(!finalResult){
+        throw new ApiError(400 , "Error in genrating content for this prompt!");
+    }
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200 , finalResult));
+})
+
+export {getItinerary , getHotels , addItinerary , AIchat};
 
 
 
