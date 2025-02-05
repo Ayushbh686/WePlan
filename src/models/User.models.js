@@ -21,7 +21,7 @@ const UserSchema = new mongoose.Schema({
         type: String, 
         required: true 
     },
-    profilePicture: { 
+    avatar : { 
         type: String, //cloudinary
         default: "" 
     },
@@ -46,10 +46,16 @@ const UserSchema = new mongoose.Schema({
             ref: "Package"
         }
     ],
-    Itineraries : [
+    itineraries : [
         {
             type : mongoose.Schema.Types.ObjectId,
             ref : "Itinerary"
+        }
+    ],
+    notifications : [
+        {
+            type : mongoose.Schema.Types.ObjectId,
+            ref : "Notification"
         }
     ]
   } , {timestamps : true});

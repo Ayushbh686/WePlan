@@ -229,160 +229,85 @@ const updatePassword = asyncHandler(async (req , res)=>{
     .json(new ApiResponse(200 , {} , "Password updated successfully!"));
 });
 
+//for the user viewing his own profile
 const getCurrentUser = asyncHandler(async(req,res)=>{
     return res
     .status(200)
     .json(new ApiResponse(200 , req.user , "current user fetched successfully! "));
 });
 
-const updateAccountDetials = asyncHandler(async(req , res)=>{
-    const {fullName , email} = req.body;
+//getting user notifications
+const getNotifications = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id).populate("notifications");
 
-    if(!fullName || !email){
-        throw new ApiError(400 , "Both feilds are required! ");
+    if (!user) {
+        throw new ApiError(404, "User not found!");
     }
 
-    const user =await User.findByIdAndUpdate(
-        req.user?._id,
-        {
-            $set : {
-                fullName ,
-                email : email
-            }
-        },
-        {new : true}
-    ).select("-password");
-
     return res
-    .status(200)
-    .json(new ApiResponse(200 , user , "Account details updated successfully! "));
+        .status(200)
+        .json(new ApiResponse(200, user.notifications, "User notifications fetched successfully!"));
 });
 
 
-//update after this part 
-const getUserProfile = asyncHandler(async(req,res)=>{
-    const {username} = req.params;
+//get user itinerary history
+const getItineraryHistory = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id).populate("itineraries");
 
-    if(!username?.trim()){
-        throw new ApiError(400 , "username not given!");
-    }
-    console.log(username);
-    const channel = await User.aggregate([ //return array of objects , in our case it will be of size 1 as 1 object filtered after 1st pipeline
-        {
-            $match : {
-                userName : username?.toLowerCase()
-            }
-        },
-        {
-            $lookup : {
-                from : "subscriptions" , //model is saved with small first letter and plural
-                localField : "_id",
-                foreignField : "channel",
-                as : "subscriber" // saved as an array of object with subscription document by whom user is subscribed
-            }
-        },
-        {
-            $lookup : {
-                from : "subscriptions" , //model is saved with small first letter and plural
-                localField : "_id",
-                foreignField : "Subscriber",
-                as : "subscribedTo" // saved as an array of object with subscription document to whom user subscribed
-            }
-        },
-        {
-            $addFields : {
-                subscribersCount : {
-                    $size : "$subscribers"
-                },
-                channelSubscribedToCount : {
-                    $size : "$subscribedTo"
-                },
-                isSubscribed: {
-                    $cond: {
-                        if: { $in: [req.user?._id, "$subscribers.Subscriber"] }, // modelname.parameter
-                        then: true,
-                        else: false
-                    }
-                }
-            }
-        },
-        {
-            $project : {
-                fullName : 1,
-                userName : 1,
-                email : 1,
-                subscribersCount : 1,
-                channelSubscribedToCount : 1,
-                isSubscribed : 1,
-                avatar : 1,
-                coverImage : 1
-            }
-        }
-    ])
-
-    if(!channel?.length){
-        throw new ApiError(404 , "channel does not exists! ")
+    if (!user) {
+        throw new ApiError(404, "User not found!");
     }
 
     return res
-    .status(200)
-    .json(new ApiResponse(200 , channel[0] , "channel details fetched successfully! "))
-})
-
-const getWatchHistory = asyncHandler(async(req,res)=>{
-
-    const user = await User.aggregate([
-        {
-            $match : {
-                _id : new mongoose.Types.ObjectId(req.user._id) // creates object id for mongodb from mongoose id as pipline directly interact with mongodb
-            }
-        },
-        {
-            $lookup : {
-                from : "videos",
-                localField : "watchHistory",
-                foreignField : "_id",
-                as : "watchHistory",
-                pipline : [
-                    //nested pipeline
-                    {
-                        from : "users",
-                        localField : "owner",
-                        foreignField : "_id",
-                        as : "owner",
-                        pipeline : [
-                            {
-                                $project : {
-                                    fullName : 1,
-                                    userName : 1,
-                                    avatar : 1
-                                }
-                            }
-                        ]
-                    },
-                    {
-                        $addFields : {
-                            owner : {
-                                $first : "$owner"
-                            }
-                        }
-                    }
-                ]
-            }
-        }
-    ])
-
-    return res
-    .status(200)
-    .json(new ApiResponse(200 , user[0].watchHistory , "user watch history fetched successfully! "));
-})
-
-const getPackageHistory = asyncHandler(async(req, res)=>{
-
+        .status(200)
+        .json(new ApiResponse(200, user.itineraries, "User Itinerary history fetched successfully!"));
 });
 
-const getBlogHistory = asyncHandler(async(req, res)=>{
 
+//get user package history
+const getPackageHistory = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id).populate("packages");
+
+    if (!user) {
+        throw new ApiError(404, "User not found!");
+    }
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, user.packages, "User package history fetched successfully!"));
+});
+
+
+//get user blog history
+const getBlogHistory = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id).populate("blogs");
+
+    if (!user) {
+        throw new ApiError(404, "User not found!");
+    }
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, user.blogs, "User blog history fetched successfully!"));
+});
+
+
+const getUserProfile = asyncHandler(async (req,res)=>{
+    const {userName} = req.params;
+
+    if(!userName){
+        throw new ApiError(400 , "Give userName!");
+    }
+
+    const user = await User.findOne({userName : userName}).populate("blogs");
+
+    if(!user){
+        throw new ApiError(400 , "user not found!!")
+    }
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200 , user , "user profile fetched!"))
 });
 
 export {registerUser,
@@ -392,9 +317,10 @@ export {registerUser,
     updatePassword,
     getCurrentUser,
     updateAccountDetials,
-    updateAvatar,
-    updateCoverImage,
-    getWatchHistory,
+    getItineraryHistory,
+    getPackageHistory,
+    getBlogHistory,
+    getNotifications,
     getUserProfile
 };
 
