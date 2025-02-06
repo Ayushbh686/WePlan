@@ -45,7 +45,7 @@ const UserSchema = new mongoose.Schema({
             type : mongoose.Schema.Types.ObjectId,
             ref: "Package"
         }
-    ],
+    ], //user enrolled packages
     itineraries : [
         {
             type : mongoose.Schema.Types.ObjectId,
