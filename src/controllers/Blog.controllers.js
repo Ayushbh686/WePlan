@@ -70,6 +70,7 @@ const addLike = asyncHandler(async (req, res) => {
     // Send notification to blog author
     const notify = await Notification.create({
         user: blog.author,
+        recipientModel : "User",
         message: `Your blog "${blog.title}" got liked by ${req.user?.userName}`,
         type: "Blog Liked"
     });
@@ -104,6 +105,7 @@ const addComment = asyncHandler(async (req, res) => {
     // Send notification to blog author
     const notify = await Notification.create({
         user: blog.author,
+        recipientModel : "User",
         message: `User ${req.user?.userName} commented on your blog "${blog.title}"`,
         type: "Blog Commented"
     });

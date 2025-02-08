@@ -13,8 +13,7 @@ const ProviderSchema = new mongoose.Schema({
     bio: { type: String },
     refreshToken : { type : String },
     packages: [{ type: mongoose.Schema.Types.ObjectId, ref: "Package" }], // Packages offered
-    reviews: [{ type: mongoose.Schema.Types.ObjectId, ref: "Review" }], // Reviews on provider
-    customers : [{type: mongoose.Schema.Types.ObjectId, ref: "User"}],
+    reviews: [{ type: mongoose.Schema.Types.ObjectId, ref: "ReviewProvider" }], // Reviews on provider
     rating: { type: Number, default: 0 }, // Average rating of provider
     notifications : [ { type : mongoose.Schema.Types.ObjectId , ref : "Notification" } ]
 }, { timestamps: true });

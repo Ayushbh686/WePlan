@@ -97,6 +97,7 @@ const enrollInPackage = asyncHandler(async (req, res) => {
 
     const notify = await Notification.create({
         user: thisPackage.postedBy,
+        recipientModel : "Provider",
         message: `User ${req.user.userName} enrolled in your package "${thisPackage.title}"`,
         type: "package enrollment"
     });

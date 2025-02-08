@@ -229,6 +229,29 @@ const updatePassword = asyncHandler(async (req , res)=>{
     .json(new ApiResponse(200 , {} , "Password updated successfully!"));
 });
 
+const updateAccountDetials = asyncHandler(async(req , res)=>{
+    const {fullName , email} = req.body;
+
+    if(!fullName || !email){
+        throw new ApiError(400 , "Both feilds are required! ");
+    }
+
+    const user =await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set : {
+                fullName ,
+                email : email
+            }
+        },
+        {new : true}
+    ).select("-password");
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200 , user , "Account details updated successfully! "));
+});
+
 //for the user viewing his own profile
 const getCurrentUser = asyncHandler(async(req,res)=>{
     return res
@@ -298,7 +321,7 @@ const getUserProfile = asyncHandler(async (req,res)=>{
     if(!userName){
         throw new ApiError(400 , "Give userName!");
     }
-
+    // console.log(userName);
     const user = await User.findOne({userName : userName}).populate("blogs");
 
     if(!user){

@@ -4,24 +4,26 @@ import {User} from "../models/User.models.js";
 // import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
+import { Provider } from "../models/Provider.models.js";
+import { ReviewProvider } from "../models/ReviewProvider.models.js";
 import mongoose from "mongoose";
 
 
-const generateAccessAndRefreshToken = async (userId)=>{
-    const user = await User.findOne({_id: userId});
-    if (!user) {
-        throw new ApiError(404, "User not found");
+const generateAccessAndRefreshToken = async (providerId)=>{
+    const provider = await Provider.findOne({_id: providerId});
+    if (!provider) {
+        throw new ApiError(404, "provider not found");
     }
-    const accessToken = await user.generateAccessToken();
-    const refreshToken = await user.generateRefreshToken();
+    const accessToken = await provider.generateAccessToken();
+    const refreshToken = await provider.generateRefreshToken();
 
-    user.refreshToken = refreshToken;
-    await user.save({validateBeforeSave : false});
+    provider.refreshToken = refreshToken;
+    await provider.save({validateBeforeSave : false});
 
     return {accessToken ,refreshToken}
 }
 
-const registerUser = asyncHandler(async (req , res)=>{
+const registerProvider = asyncHandler(async (req , res)=>{
     //take user details 
     //check validation - emoty feild 
     //check if user exists : email , username
@@ -41,18 +43,18 @@ const registerUser = asyncHandler(async (req , res)=>{
         throw new ApiError(400 , "no feild can be empty! ");
     }
 
-    const existedUser = await User.findOne({
+    const existedUser = await Provider.findOne({
         $or:[{email} , {userName}]
     }); // User.findOne({email}) for search by email only
 
     if(existedUser){
-        throw new ApiError(409 , "User with these Username or email exists! ");
+        throw new ApiError(409 , "Proivder with these Username or email exists! ");
     }
     // console.log("req.files " , req.files);
     // const avatarLocalPath = req.files?.avatar[0]?.path;
     // const coverImageLocalPath = req.files?.coverImage[0]?.path;
     
-    const user = await User.create({
+    const user = await Provider.create({
         fullName : fullName,
         email : email,
         userName : userName.toLowerCase(),
@@ -61,22 +63,22 @@ const registerUser = asyncHandler(async (req , res)=>{
 
     // console.log("user created : " , user);
 
-    const createdUser = await User.findById(user._id).select(
+    const createdUser = await Provider.findById(user._id).select(
         "-password -refreshToken"
     )
 
     // console.log("user to be sent as response : " , createdUser);
 
     if(!createdUser){
-        throw new ApiError(500 , "Something went wrong while registering user! ");
+        throw new ApiError(500 , "Something went wrong while registering provider! ");
     }
 
     return res.status(200).json(
-        new ApiResponse(201 , createdUser , "User registered Successfully! ")
+        new ApiResponse(201 , createdUser , "proivder registered Successfully! ")
     )
 });
 
-const loginUser = asyncHandler(async(req,res)=>{
+const loginProvider = asyncHandler(async(req,res)=>{
     //takes user data from req body 
     //get username or email
     //find user in db
@@ -92,12 +94,12 @@ const loginUser = asyncHandler(async(req,res)=>{
         throw new ApiError(404 , "email or userName is required! ");
     }
 
-    const user = await User.findOne({
+    const user = await Provider.findOne({
         $or : [{email} , {userName}]
     });
 
     if(!user){
-        throw new ApiError(404 , "user with this emial or username not found! ");
+        throw new ApiError(404 , "provider with this emial or username not found! ");
     }
 
     const isCorrect = await user.isPasswordCorrect(password)
@@ -108,7 +110,7 @@ const loginUser = asyncHandler(async(req,res)=>{
 
     const {accessToken , refreshToken} = await generateAccessAndRefreshToken(user._id);
 
-    const loggedInUser = await User.findOne({
+    const loggedInUser = await Provider.findOne({
         $or: [{ email }, { userName }]
     }).select("-password -refreshToken");
 
@@ -125,16 +127,16 @@ const loginUser = asyncHandler(async(req,res)=>{
         new ApiResponse(
             200 , 
             {
-                "user" : loggedInUser , accessToken , refreshToken
+                "provider" : loggedInUser , accessToken , refreshToken
             },
             "used loggedIn successfully"
         )
     );
 });
 
-const logoutUser = asyncHandler(async(req,res)=>{
-    await User.findByIdAndUpdate(
-        req.user._id,
+const logoutProvider = asyncHandler(async(req,res)=>{
+    await Provider.findByIdAndUpdate(
+        req.provider._id,
         {
             $unset : {
                 refreshToken : 1 // unset the refresh token 
@@ -159,12 +161,16 @@ const logoutUser = asyncHandler(async(req,res)=>{
             200 , 
             {
             },
-            "used loggedOut successfully"
+            "provider loggedOut successfully"
         )
     );    
 })
 
-//refresh both access and refresh token when user have valid refresh token , used when auth middle rejects access token as its expired so the system generates both new access and refresh token again , this function rotates feresh token after every use
+//refresh both access and refresh token when user have valid refresh token , used when auth middle rejects access token as its expired so the system generates both new access and refresh token again , this function rotates refresh token after every use
+/*
+here the user refresh and access token both are rotated when access token expires and he still has refresh token so does that means the user wont have to login anytime if he continously uses the site as as asoon as access token expires new access and refresh token is set
+yes a big yes
+*/
 const refreshAccessToken = asyncHandler(async (req, res)=>{
     const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
 
@@ -175,7 +181,7 @@ const refreshAccessToken = asyncHandler(async (req, res)=>{
     try {
         const decodedToken = jwt.verify(incomingRefreshToken , process.env.REFRESH_TOKEN_SECRET);
     
-        const user = await User.findById(decodedToken?._id);
+        const user = await Provider.findById(decodedToken?._id);
     
         if(!user){
             throw new ApiError(401 , "invalid refresh token"); //frontend part can redirect to login again page
@@ -209,12 +215,12 @@ const refreshAccessToken = asyncHandler(async (req, res)=>{
     } catch (error) {
         throw new ApiError(401 , error?.message || "refresh token expired");
     }
-})
+});
 
 const updatePassword = asyncHandler(async (req , res)=>{
     const {newPassword , oldPassword} = req.body;
 
-    const user = await User.findById(req.user?._id);
+    const user = await Provider.findById(req.provider?._id);
     
     const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
     if(!isPasswordCorrect){
@@ -230,15 +236,15 @@ const updatePassword = asyncHandler(async (req , res)=>{
 });
 
 //for the user viewing his own profile
-const getCurrentUser = asyncHandler(async(req,res)=>{
+const getCurrentProvider = asyncHandler(async(req,res)=>{
     return res
     .status(200)
-    .json(new ApiResponse(200 , req.user , "current user fetched successfully! "));
+    .json(new ApiResponse(200 , req.provider , "current user fetched successfully! "));
 });
 
 //getting user notifications
 const getNotifications = asyncHandler(async (req, res) => {
-    const user = await User.findById(req.user._id).populate("notifications");
+    const user = await Provider.findById(req.provider._id).populate("notifications");
 
     if (!user) {
         throw new ApiError(404, "User not found!");
@@ -250,23 +256,9 @@ const getNotifications = asyncHandler(async (req, res) => {
 });
 
 
-//get user itinerary history
-const getItineraryHistory = asyncHandler(async (req, res) => {
-    const user = await User.findById(req.user._id).populate("itineraries");
-
-    if (!user) {
-        throw new ApiError(404, "User not found!");
-    }
-
-    return res
-        .status(200)
-        .json(new ApiResponse(200, user.itineraries, "User Itinerary history fetched successfully!"));
-});
-
-
-//get user package history
+//get provider package history (the ones he posted)
 const getPackageHistory = asyncHandler(async (req, res) => {
-    const user = await User.findById(req.user._id).populate("packages");
+    const user = await Provider.findById(req.user._id).populate("packages");
 
     if (!user) {
         throw new ApiError(404, "User not found!");
@@ -277,29 +269,15 @@ const getPackageHistory = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, user.packages, "User package history fetched successfully!"));
 });
 
-
-//get user blog history
-const getBlogHistory = asyncHandler(async (req, res) => {
-    const user = await User.findById(req.user._id).populate("blogs");
-
-    if (!user) {
-        throw new ApiError(404, "User not found!");
-    }
-
-    return res
-        .status(200)
-        .json(new ApiResponse(200, user.blogs, "User blog history fetched successfully!"));
-});
-
 //for other viewers
-const getUserProfile = asyncHandler(async (req,res)=>{
+const getProviderProfile = asyncHandler(async (req,res)=>{
     const {userName} = req.params;
 
     if(!userName){
         throw new ApiError(400 , "Give userName!");
     }
 
-    const user = await User.findOne({userName : userName}).populate("blogs");
+    const user = await Provider.findOne({userName : userName});
 
     if(!user){
         throw new ApiError(400 , "user not found!!")
@@ -310,26 +288,93 @@ const getUserProfile = asyncHandler(async (req,res)=>{
     .json(new ApiResponse(200 , user , "user profile fetched!"))
 });
 
-const getReviews = asyncHandler(async(req,res)=>{
+const getProviderReviews = asyncHandler(async (req, res) => {
+    const provider = await Provider.findById(req.params.providerId).populate("reviews");
+    if (!provider) {
+        throw new ApiError(404, "Provider not found!");
+    }
 
+    return res.status(200).json(new ApiResponse(200, provider.reviews, "Reviews fetched successfully!"));
 });
 
-const addReviewToProvider = asyncHandler(async(req,res)=>{
+const addReviewToProvider = asyncHandler(async (req, res) => {
+    const { providerId } = req.params;
+    const { rating, text } = req.body;
+    const userId = req.user._id;  // User who is submitting the review
 
+    // Validate input
+    if (!rating || !text) {
+        throw new ApiError(400, "Rating and review text are required!");
+    }
+
+    // Find the provider
+    const provider = await Provider.findById(providerId);
+    if (!provider) {
+        throw new ApiError(404, "Provider not found!");
+    }
+
+    // Check if the user has been enrolled in at least one package from this provider
+    const hasEnrolled = await Package.exists({
+        postedBy: providerId,
+        enrolled: { $elemMatch: { $eq: userId } }  // Correctly check if user is in enrolled array
+    });
+
+    if (!hasEnrolled) {
+        throw new ApiError(403, "You must have enrolled in a package by this provider to leave a review!");
+    }
+
+    // Check if the user has already reviewed this provider
+    const existingReview = await ReviewProvider.findOne({ user: userId, provider: providerId });
+    if (existingReview) {
+        throw new ApiError(400, "You have already reviewed this provider!");
+    }
+
+    // Create a new review
+    const review = await ReviewProvider.create({
+        user: userId,
+        provider: providerId,
+        rating,
+        text
+    });
+
+    // Add review to the provider
+    provider.reviews.push(review._id);
+
+    // **Incrementally update provider rating**
+    const totalReviews = provider.reviews.length;
+    provider.rating = ((provider.rating * (totalReviews - 1)) + rating) / totalReviews;
+
+    await provider.save();
+
+    // Ensure provider.notifications exists before pushing
+    const newNotification = await Notification.create({
+        recipient: providerId, // Provider's ObjectId
+        recipientModel: "Provider", // Specify the model
+        type: "review",
+        message: "You received a new review from a customer!"
+    });
+    
+    await provider.notifications.push(newNotification._id);
+
+    await provider.save();
+
+    return res.status(201).json(new ApiResponse(201, review, "Review added successfully!"));
 });
 
-export {registerUser,
-    loginUser,
-    logoutUser,
+
+export {
+    registerProvider,
+    loginProvider,
+    logoutProvider,
     refreshAccessToken,
     updatePassword,
-    getCurrentUser,
-    updateAccountDetials,
-    getItineraryHistory,
+    getCurrentProvider,
     getPackageHistory,
-    getBlogHistory,
     getNotifications,
-    getUserProfile
+    getProviderProfile,
+    getProviderReviews,
+    addReviewToProvider
 };
+
 
 // update all of them
