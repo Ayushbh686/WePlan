@@ -123,7 +123,7 @@ const addItinerary = asyncHandler(async(req,res)=>{//unchecked
         req.user?._id,
         {
             $addToSet : {
-                Itineraries : createdItinerary._id
+                itineraries : createdItinerary._id
             }
         },
         {new : true}
@@ -133,6 +133,8 @@ const addItinerary = asyncHandler(async(req,res)=>{//unchecked
         throw new ApiError(400 , "Error in Updating Itinerary in User DB! ");
     }
 
+    console.log(updatedUser);
+
     return res
     .status(200)
     .json(new ApiResponse(201 , createdItinerary ,"Itinerary added successfully !"));
@@ -140,7 +142,7 @@ const addItinerary = asyncHandler(async(req,res)=>{//unchecked
 
 const AIchat = asyncHandler(async(req, res)=>{//unchecked
     const {prompt} = req.body;
-    const result = await model.genrate(prompt);
+    const result = await model.generateContent(prompt);
     const finalResult = await result.response.text();
 
     if(!finalResult){

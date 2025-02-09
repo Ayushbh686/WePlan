@@ -4,7 +4,7 @@ import { User } from "../models/User.models.js";
 import Blog from "../models/Blog.models.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import Notification from "../models/Notification.models.js";
+import {Notification} from "../models/Notification.models.js";
 import { Comment } from "../models/Comment.models.js";
 
 

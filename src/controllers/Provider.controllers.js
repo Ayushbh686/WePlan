@@ -6,6 +6,8 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import { Provider } from "../models/Provider.models.js";
 import { ReviewProvider } from "../models/ReviewProvider.models.js";
+import {Notification} from "../models/Notification.models.js";
+import {Package} from "../models/Package.models.js";
 import mongoose from "mongoose";
 
 
@@ -34,11 +36,11 @@ const registerProvider = asyncHandler(async (req , res)=>{
     //check user creation 
     //return res
 
-    const {fullName , email , userName , password} = req.body;
+    const {fullName , email , userName , password , phone} = req.body;
     // console.log("email : " , email);
     // console.log("req.files: ", req.files);
     if(
-        [fullName , email , userName , password].some((ele) => ele?.trim() === '') // ? means if ele exists
+        [fullName , email , userName , password , phone].some((ele) => ele?.trim() === '') // ? means if ele exists
     ){
         throw new ApiError(400 , "no feild can be empty! ");
     }
@@ -58,7 +60,8 @@ const registerProvider = asyncHandler(async (req , res)=>{
         fullName : fullName,
         email : email,
         userName : userName.toLowerCase(),
-        password : password
+        password : password,
+        phone
     });
 
     // console.log("user created : " , user);
@@ -258,15 +261,11 @@ const getNotifications = asyncHandler(async (req, res) => {
 
 //get provider package history (the ones he posted)
 const getPackageHistory = asyncHandler(async (req, res) => {
-    const user = await Provider.findById(req.user._id).populate("packages");
-
-    if (!user) {
-        throw new ApiError(404, "User not found!");
-    }
+    const provider =  Provider.findById(req.provider._id).populate("packages");
 
     return res
         .status(200)
-        .json(new ApiResponse(200, user.packages, "User package history fetched successfully!"));
+        .json(new ApiResponse(200, provider.packages, "User package history fetched successfully!"));
 });
 
 //for other viewers
@@ -277,7 +276,7 @@ const getProviderProfile = asyncHandler(async (req,res)=>{
         throw new ApiError(400 , "Give userName!");
     }
 
-    const user = await Provider.findOne({userName : userName});
+    const user = await Provider.findOne({userName : userName}).populate("reviews").populate("packages");
 
     if(!user){
         throw new ApiError(400 , "user not found!!")
@@ -325,6 +324,7 @@ const addReviewToProvider = asyncHandler(async (req, res) => {
 
     // Check if the user has already reviewed this provider
     const existingReview = await ReviewProvider.findOne({ user: userId, provider: providerId });
+    // console.log(existingReview);
     if (existingReview) {
         throw new ApiError(400, "You have already reviewed this provider!");
     }
@@ -343,7 +343,7 @@ const addReviewToProvider = asyncHandler(async (req, res) => {
     // **Incrementally update provider rating**
     const totalReviews = provider.reviews.length;
     provider.rating = ((provider.rating * (totalReviews - 1)) + rating) / totalReviews;
-
+    
     await provider.save();
 
     // Ensure provider.notifications exists before pushing
