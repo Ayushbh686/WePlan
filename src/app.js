@@ -19,6 +19,7 @@ import ItineraryRoutes from "./routes/Itinerary.routes.js";
 import UserRoutes from "./routes/User.routes.js";
 import BlogRoutes from "./routes/Blog.routes.js";
 import ProviderRoutes from "./routes/Provider.routes.js";
+import PackageRoutes from "./routes/Package.routes.js";
 
 app.use("/api/itinerary" , ItineraryRoutes);
 //https://localhost:8000/api/itinerary/
@@ -31,5 +32,8 @@ app.use("/api/blog" , BlogRoutes);
 
 app.use("/api/provider" , ProviderRoutes);
 //https://localhost:8000/api/provider/
+
+app.use("/api/package" , PackageRoutes);
+//https://localhost:8000/api/package/
 
 export {app};

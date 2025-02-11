@@ -261,11 +261,12 @@ const getNotifications = asyncHandler(async (req, res) => {
 
 //get provider package history (the ones he posted)
 const getPackageHistory = asyncHandler(async (req, res) => {
-    const provider =  Provider.findById(req.provider._id).populate("packages");
+    const provider =  await Provider.findById(req.provider._id).populate("packages");
 
+    // console.log(provider);
     return res
         .status(200)
-        .json(new ApiResponse(200, provider.packages, "User package history fetched successfully!"));
+        .json(new ApiResponse(200 , provider.packages, "User package history fetched successfully!"));
 });
 
 //for other viewers

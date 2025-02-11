@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { asyncHandler } from "../utils/asyncHandler";
+import { asyncHandler } from "../utils/asyncHandler.js";
 import { Package } from "../models/Package.models.js";
 import { User } from "../models/User.models.js";
 import { Provider } from "../models/Provider.models.js";
@@ -12,7 +12,7 @@ const addPackage = asyncHandler(async (req, res) => {
     const { title, date, description, destination, price, slots } = req.body;
 
     // Ensure only package providers can add packages
-    const provider = await PackageProvider.findById(req.provider._id);
+    const provider = await Provider.findById(req.provider._id);
     if (!provider) {
         throw new ApiError(403, "Only package providers can create packages!");
     }
@@ -24,14 +24,14 @@ const addPackage = asyncHandler(async (req, res) => {
         destination,
         price,
         availableSlots: slots,
-        packageProvider: provider._id
+        postedBy: provider._id
     });
 
     if (!newPackage) {
         throw new ApiError(400, "Error in uploading Package!");
     }
 
-    await PackageProvider.findByIdAndUpdate(provider._id,
+    await Provider.findByIdAndUpdate(provider._id,
         {
             $push: { packages: newPackage._id }
         }
@@ -159,7 +159,7 @@ const getPackageById = asyncHandler(async (req, res) => {
 
     const thisPackage = await Package.findById(packageId)
         .populate("postedBy", "fullName userName avatar") 
-        .populate("enrolledUsers", "fullName userName avatar")
+        .populate("enrolled", "fullName userName avatar")
         .populate("reviews" , "user text rating")
 
     if (!thisPackage) {
@@ -186,7 +186,7 @@ const markPackageComplete = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Package not found!");
     }
     
-    if (thisPackage.postedBy.toString() !== req.user._id.toString()) {
+    if (thisPackage.postedBy.toString() !== req.provider._id.toString()) {
         throw new ApiError(403, "Only the provider can mark the package as complete!");
     }
     
@@ -206,7 +206,7 @@ const addReviewToPackage = asyncHandler(async (req, res) => {
         throw new ApiError(404, "Package not found!");
     }
     
-    if (!thisPackage.isCompleted) {
+    if (!thisPackage.IsCompleted) {
         throw new ApiError(400, "Cannot review a package that is not completed!");
     }
 
@@ -226,6 +226,7 @@ const addReviewToPackage = asyncHandler(async (req, res) => {
     
     const notify = await Notification.create({
         user: provider._id,
+        recipientModel : "Provider",
         message: `User ${req.user.userName} left a review on your package "${thisPackage.title}"`,
         type: "package review"
     });

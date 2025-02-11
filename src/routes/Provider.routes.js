@@ -11,7 +11,7 @@ import {
     getProviderProfile,
     getProviderReviews,
     addReviewToProvider
-} from "../controllers/provider.controllers.js";
+} from "../controllers/Provider.controllers.js";
 import { verifyJWTProvider } from "../middleware/authProvider.middlewares.js";
 import { verifyJWT } from "../middleware/auth.middlewares.js";
 
