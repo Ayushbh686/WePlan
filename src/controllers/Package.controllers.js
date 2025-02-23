@@ -9,7 +9,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { ApiError } from "../utils/ApiError.js";
 
 const addPackage = asyncHandler(async (req, res) => {
-    const { title, date, description, destination, price, slots } = req.body;
+    const { title, date, description, destination, price, slots , tags} = req.body;
 
     // Ensure only package providers can add packages
     const provider = await Provider.findById(req.provider._id);
@@ -24,6 +24,7 @@ const addPackage = asyncHandler(async (req, res) => {
         destination,
         price,
         availableSlots: slots,
+        tags : tags,
         postedBy: provider._id
     });
 
